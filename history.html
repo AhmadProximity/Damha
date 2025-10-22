@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riwayat Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { opacity: 0; transition: opacity 0.6s ease; }
+    body.fade-in { opacity: 1; }
+
+    .iphone-frame {
+      position: relative;
+      width: 360px;
+      height: 640px;
+      background: #111;
+      border-radius: 40px;
+      padding: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      max-height: 90vh;
+      transition: transform 0.6s ease, opacity 0.6s ease;
+    }
+    .iphone-frame.fade-out { opacity: 0; transform: scale(0.96); }
+
+    .iphone-screen {
+      background: white;
+      border-radius: 28px;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .iphone-notch {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 22px;
+      background: #000;
+      border-radius: 12px;
+    }
+
+    .conv-item:hover { background-color: #fef9c3; }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-300 flex justify-center items-center min-h-screen relative">
+
+  <!-- Tombol kembali -->
+  <button id="backBtn"
+    class="absolute top-6 left-6 bg-white/80 text-blue-700 font-semibold px-4 py-2 rounded-full shadow-md hover:bg-white hover:shadow-lg transition">
+    ⬅️ Kembali
+  </button>
+
+  <!-- Bingkai iPhone -->
+  <div class="iphone-frame" id="frame">
+    <div class="iphone-notch"></div>
+
+    <!-- Isi layar -->
+    <div class="iphone-screen">
+      <div class="w-full bg-white flex flex-col flex-1 shadow-xl rounded-2xl overflow-hidden">
+
+        <!-- Header -->
+        <div class="bg-yellow-400 text-black p-4 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" class="w-8 h-8 rounded-full">
+            <div>
+              <h1 class="font-bold text-lg">Riwayat Chat</h1>
+              <p class="text-xs opacity-80">Semua percakapan tersimpan</p>
+            </div>
+          </div>
+          <div class="flex gap-2 items-center">
+            <button onclick="createConversation()"
+              class="text-sm bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full transition">➕</button>
+            <span class="text-sm opacity-70">📜</span>
+          </div>
+        </div>
+
+        <!-- Daftar Riwayat -->
+        <div id="history-list" class="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50 text-sm">
+          <p class="text-center text-gray-400 mt-10">Memuat riwayat...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transisi Halaman -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.body.classList.add("fade-in");
+      loadHistory();
+
+      // Auto refresh setiap 10 detik
+      setInterval(() => {
+        loadHistory(false); // parameter false artinya tanpa animasi "memuat..."
+      }, 10000);
+    });
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      const frame = document.getElementById("frame");
+      frame.classList.add("fade-out");
+      document.body.style.opacity = 0;
+      setTimeout(() => {
+        window.location.href = "{{ url_for('index') }}";
+      }, 600);
+    });
+
+    // === Fungsi: Load daftar percakapan ===
+    async function loadHistory(showLoading = true) {
+      const container = document.getElementById("history-list");
+      if (showLoading) container.innerHTML = "<p class='text-center text-gray-400 mt-10'>Memuat data...</p>";
+
+      try {
+        const res = await fetch("/api/conversations");
+        const data = await res.json();
+        container.innerHTML = "";
+
+        if (data.conversations && data.conversations.length > 0) {
+          data.conversations.forEach(conv => {
+            const item = document.createElement("div");
+            item.className = "conv-item cursor-pointer p-3 rounded-lg shadow-sm bg-white border hover:shadow-md transition";
+            item.innerHTML = `
+              <div class="font-semibold text-gray-800">${conv.title || "Tanpa Judul"}</div>
+              <div class="text-xs text-gray-500">${new Date(conv.created_at).toLocaleString()}</div>
+            `;
+            item.onclick = () => openConversation(conv.id);
+            container.appendChild(item);
+          });
+        } else {
+          container.innerHTML = "<p class='text-center text-gray-500 mt-10'>Belum ada percakapan</p>";
+        }
+      } catch (err) {
+        container.innerHTML = `<p class='text-center text-red-500 mt-10'>Gagal memuat riwayat: ${err}</p>`;
+      }
+    }
+
+    // === Fungsi: Buka percakapan ===
+    function openConversation(convId) {
+      const frame = document.getElementById("frame");
+      frame.classList.add("fade-out");
+      document.body.style.opacity = 0;
+      setTimeout(() => {
+        window.location.href = `/simulasi?conversation_id=${convId}`;
+      }, 600);
+    }
+
+    // === Fungsi: Buat percakapan baru ===
+    async function createConversation() {
+      const title = prompt("Judul percakapan baru:");
+      if (!title) return;
+
+      try {
+        const res = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: title,
+            created_by: 1,
+            is_group: false
+          })
+        });
+
+        const data = await res.json();
+        if (data.id) {
+          // 🔄 Refresh daftar tanpa reload halaman
+          await loadHistory(false);
+
+          // 🚀 Langsung buka percakapan baru
+          openConversation(data.id);
+        } else {
+          alert("❌ Gagal membuat percakapan baru.");
+        }
+      } catch (err) {
+        alert("❌ Error: " + err);
+      }
+    }
+  </script>
+</body>
+</html>
