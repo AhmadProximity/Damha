@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Halaman Login - Simulasi Chat AES Flask">
+  <title>Login - Simulasi Chat AES</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #2563eb, #0ea5e9, #38bdf8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      color: #fff;
+      margin: 0;
+    }
+
+    body.fade-in { opacity: 1; }
+
+    .ipad-frame {
+      position: relative;
+      width: 900px;
+      height: 650px;
+      background: #000;
+      border-radius: 36px;
+      padding: 24px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+      overflow: hidden;
+      transition: transform 0.6s ease, opacity 0.6s ease;
+    }
+
+    .ipad-frame.fade-out { opacity: 0; transform: scale(0.97); }
+
+    .ipad-screen {
+      background: linear-gradient(180deg, #ffffff, #f9fafb);
+      width: 100%;
+      height: 100%;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      color: #111;
+      text-align: center;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f2c62;
+      text-transform: uppercase;
+      line-height: 1.4;
+      margin-bottom: 24px;
+    }
+
+    .login-box {
+      background: #f1f5ff;
+      border-left: 6px solid #3b82f6;
+      border-radius: 16px;
+      padding: 32px 40px;
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+
+    .login-box label {
+      font-weight: 600;
+      color: #0f2c62;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      margin-bottom: 18px;
+      font-size: 16px;
+      transition: all 0.2s ease;
+    }
+
+    .login-box input:focus {
+      border-color: #3b82f6;
+      outline: none;
+      box-shadow: 0 0 4px rgba(59,130,246,0.4);
+    }
+
+    .btn-login {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      padding: 14px 32px;
+      border: none;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(37,99,235,0.3);
+    }
+
+    .btn-login:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(37,99,235,0.5);
+    }
+
+    .link-back {
+      display: inline-block;
+      margin-top: 18px;
+      font-size: 14px;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .link-back:hover { text-decoration: underline; }
+
+    footer {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="ipad-frame" id="frame">
+    <div class="ipad-screen">
+      <h1 class="title">Masuk ke Simulasi Chat AES</h1>
+
+      <form class="login-box" method="POST" action="{{ url_for('login') }}">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Masukkan username..." required>
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Masukkan email..." required>
+
+        <button type="submit" class="btn-login">🔐 Masuk Sekarang</button>
+      </form>
+
+      <a href="{{ url_for('home') }}" class="link-back">← Kembali ke Halaman Utama</a>
+      <footer>© 2025 | Simulasi Kriptografi AES - STT Duta Bangsa</footer>
+    </div>
+  </div>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.body.classList.add("fade-in");
+  });
+  </script>
+</body>
+</html>

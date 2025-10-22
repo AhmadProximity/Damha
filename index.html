@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>AES Chat Simulation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body { opacity: 0; transition: opacity 0.6s ease; }
+    body.fade-in { opacity: 1; }
+
+    .iphone-frame {
+      position: relative;
+      width: 360px;
+      height: 640px;
+      background: #111;
+      border-radius: 40px;
+      padding: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      max-height: 90vh;
+      transition: transform 0.6s ease, opacity 0.6s ease;
+    }
+    .iphone-frame.fade-out { opacity: 0; transform: scale(0.96); }
+
+    .iphone-screen {
+      background: white;
+      border-radius: 28px;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .iphone-notch {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 22px;
+      background: #000;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-300 flex justify-center items-center min-h-screen relative">
+
+  <!-- Tombol kembali -->
+  <button id="backBtn"
+    class="absolute top-6 left-6 bg-white/80 text-blue-700 font-semibold px-4 py-2 rounded-full shadow-md hover:bg-white hover:shadow-lg transition">
+    ⬅️ Kembali
+  </button>
+
+  <!-- Bingkai iPhone -->
+  <div class="iphone-frame" id="frame">
+    <div class="iphone-notch"></div>
+
+    <!-- Isi layar -->
+    <div class="iphone-screen">
+      <div class="w-full bg-white flex flex-col flex-1 shadow-xl rounded-2xl overflow-hidden">
+
+        <!-- Header -->
+        <div id="header-bar" class="bg-green-600 text-white p-4 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" class="w-8 h-8 rounded-full">
+            <div>
+              <h1 id="conv-title" class="font-bold text-lg">ChatBot AES</h1>
+              <p class="text-xs opacity-80">Simulasi Enkripsi & Dekripsi AES</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <a href="{{ url_for('history_page') }}" 
+               class="text-sm bg-yellow-400 hover:bg-yellow-500 px-3 py-1 rounded-full">📜</a>
+            <button onclick="clearHistory()" class="text-sm bg-red-500 hover:bg-red-600 px-3 py-1 rounded-full">🗑️</button>
+          </div>
+        </div>
+
+        <!-- Chat Box -->
+        <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50 text-sm">
+          <!-- Pesan akan di-load sesuai conversation_id -->
+        </div>
+
+        <!-- Input (dengan tombol upload file) -->
+        <div class="border-t bg-white p-3 flex items-center gap-3 px-4">
+          <!-- 📎 Tombol Upload File -->
+          <input type="file" id="fileInput" class="hidden" onchange="uploadAttachment()">
+          <button onclick="document.getElementById('fileInput').click()"
+                  class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-2 rounded-full">
+            📎
+          </button>
+
+          <!-- Input pesan teks -->
+          <input type="text" id="message" placeholder="Ketik pesan..."
+                 class="flex-1 min-w-0 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+
+          <!-- Tombol aksi -->
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button onclick="encryptMessage()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full whitespace-nowrap">🔒</button>
+            <button onclick="decryptLastMessage()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full whitespace-nowrap">🔓</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.body.classList.add("fade-in");
+
+    // Ambil conversation_id dari URL
+    const params = new URLSearchParams(window.location.search);
+    conversationId = params.get("conversation_id") ? parseInt(params.get("conversation_id")) : 1;
+    loadConversationTitle(conversationId);
+    loadMessages(conversationId);
+  });
+
+  // ✅ PERUBAHAN DI SINI: arahkan tombol kembali ke halaman utama ('home')
+  document.getElementById("backBtn").addEventListener("click", () => {
+    const frame = document.getElementById("frame");
+    frame.classList.add("fade-out");
+    document.body.style.opacity = 0;
+    setTimeout(() => {
+      window.location.href = "{{ url_for('home') }}";
+    }, 600);
+  });
+
+  // --- Variabel global ---
+  let conversationId = 1;
+  const senderId = 1;
+  let lastMessageId = null;
+
+  // --- Ambil judul percakapan dari API conversations ---
+  async function loadConversationTitle(id) {
+    try {
+      const res = await fetch("/api/conversations");
+      const data = await res.json();
+      if (data.conversations) {
+        const conv = data.conversations.find(c => c.id == id);
+        if (conv) {
+          document.getElementById("conv-title").textContent = conv.title || "ChatBot AES";
+        }
+      }
+    } catch (e) {
+      console.error("Gagal memuat judul percakapan:", e);
+    }
+  }
+
+  // --- Ambil pesan dari API messages ---
+  async function loadMessages(id) {
+    const box = document.getElementById("chat-box");
+    box.innerHTML = "<p class='text-center text-gray-400 text-xs'>Memuat...</p>";
+
+    const res = await fetch(`/api/messages/${id}`);
+    const data = await res.json();
+    box.innerHTML = "";
+
+    if (data.messages && data.messages.length > 0) {
+      data.messages.forEach(m => {
+        const div = document.createElement("div");
+        const isUser = m.sender_id == senderId;
+        div.className = `p-2 rounded-lg ${isUser ? "bg-green-100 text-right" : "bg-gray-200 text-left"}`;
+        div.innerHTML = `
+          <span class="text-xs text-gray-500">${new Date(m.created_at).toLocaleString()}</span><br>
+          ${m.message_type === "attachment" 
+            ? `<a href="/uploads/${m.content_plain}" target="_blank" class="underline text-blue-600">📎 ${m.content_plain}</a>`
+            : (m.content_ciphertext ? `<code>${m.content_ciphertext}</code>` : m.content_plain || "")
+          }
+        `;
+        box.appendChild(div);
+      });
+      lastMessageId = data.messages[data.messages.length - 1].id;
+      box.scrollTop = box.scrollHeight;
+    } else {
+      box.innerHTML = "<p class='text-center text-gray-400 text-xs'>Belum ada pesan</p>";
+    }
+  }
+
+  // --- Upload File Attachment ---
+  async function uploadAttachment() {
+    const fileInput = document.getElementById("fileInput");
+    if (!fileInput.files.length) return;
+    const file = fileInput.files[0];
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("sender_id", senderId);
+    formData.append("conversation_id", conversationId);
+
+    const res = await fetch("/api/attachments/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    if (data.error) {
+      alert("❌ " + data.error);
+      return;
+    }
+
+    const box = document.getElementById("chat-box");
+    const div = document.createElement("div");
+    div.className = "p-2 rounded-lg bg-green-100 text-right";
+    div.innerHTML = `
+      <span class="text-xs text-gray-500">📎 File terkirim:</span><br>
+      <a href="/uploads/${data.filename}" target="_blank" class="underline text-blue-600">${data.filename}</a>
+    `;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+    fileInput.value = "";
+  }
+
+  // --- Enkripsi pesan dan simpan ke DB ---
+  async function encryptMessage() {
+    const input = document.getElementById("message");
+    const text = input.value.trim();
+    if (!text) return alert("Pesan tidak boleh kosong!");
+
+    const formData = new FormData();
+    formData.append("sender_id", senderId);
+    formData.append("message", text);
+
+    const res = await fetch(`/api/messages/${conversationId}`, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    if (data.error) {
+      alert("❌ " + data.error);
+      return;
+    }
+
+    const box = document.getElementById("chat-box");
+    const div = document.createElement("div");
+    div.className = "p-2 rounded-lg bg-green-100 text-right";
+    div.innerHTML = `
+      <span class="text-xs text-gray-500">Terenkripsi</span><br>
+      <code>${data.cipher_b64}</code>
+    `;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+    input.value = "";
+    lastMessageId = data.message_id;
+  }
+
+  // --- Dekripsi pesan terakhir ---
+  async function decryptLastMessage() {
+    if (!lastMessageId) return alert("Belum ada pesan untuk didekripsi!");
+
+    const res = await fetch(`/api/messages/decrypt/${lastMessageId}`);
+    const data = await res.json();
+
+    const box = document.getElementById("chat-box");
+    const div = document.createElement("div");
+    div.className = "p-2 rounded-lg bg-gray-200 text-left";
+    if (data.error) {
+      div.innerHTML = `<b>Error:</b> ${data.error}`;
+    } else {
+      div.innerHTML = `💬 <b>Pesan Asli:</b> ${data.plaintext}`;
+    }
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // --- Hapus riwayat (legacy) ---
+  async function clearHistory() {
+    if (!confirm("Hapus semua pesan di DB (chat_history legacy)?")) return;
+    await fetch("/clear", { method: "POST" });
+    document.getElementById("chat-box").innerHTML = "";
+    alert("Riwayat chat dihapus (legacy).");
+  }
+  </script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Simulasi Enkripsi & Dekripsi AES berbasis Flask - ChatBot AES">
+  <title>Halaman Awal - Simulasi AES</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #2563eb, #0ea5e9, #38bdf8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      color: #fff;
+      margin: 0;
+    }
+
+    body.fade-in { opacity: 1; }
+
+    .ipad-frame {
+      position: relative;
+      width: 900px;
+      height: 650px;
+      background: #000;
+      border-radius: 36px;
+      padding: 24px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+      overflow: hidden;
+      transition: transform 0.6s ease, opacity 0.6s ease;
+    }
+
+    .ipad-frame.fade-out { opacity: 0; transform: scale(0.97); }
+
+    .ipad-screen {
+      background: linear-gradient(180deg, #ffffff, #f9fafb);
+      width: 100%;
+      height: 100%;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 60px 40px 60px;
+      text-align: center;
+      color: #111;
+      position: relative;
+    }
+
+    /* Tombol Logout di luar bingkai kiri atas */
+    .logout-btn {
+      position: fixed;
+      top: 24px;
+      left: 30px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      padding: 10px 22px;
+      border: none;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(239,68,68,0.3);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 999; /* pastikan di atas bingkai */
+    }
+
+    .logout-btn:hover {
+      transform: scale(1.07);
+      box-shadow: 0 0 18px rgba(239,68,68,0.5);
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f2c62;
+      text-transform: uppercase;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .subtitle {
+      font-size: 17px;
+      color: #374151;
+      margin-bottom: 32px;
+      text-align: center;
+      max-width: 700px;
+    }
+
+    .identity {
+      background: #f1f5ff;
+      border-left: 6px solid #3b82f6;
+      border-radius: 16px;
+      padding: 20px 26px;
+      width: 100%;
+      max-width: 550px;
+      font-size: 16px;
+      color: #111;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 36px;
+      text-align: left;
+    }
+
+    .identity table { width: 100%; border-collapse: collapse; }
+    .identity td { padding: 6px 0; vertical-align: top; }
+    .identity td:first-child { width: 180px; font-weight: 600; }
+    .identity td:nth-child(2) { width: 10px; }
+
+    .btn-start {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      padding: 16px 36px;
+      border: none;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 15px rgba(34,197,94,0.3);
+    }
+
+    .btn-start:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(34,197,94,0.5);
+    }
+
+    footer {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 14px;
+      opacity: 0.9;
+    }
+
+    .bottom-area { text-align: center; width: 100%; }
+
+    @media (max-width: 1024px) {
+      .ipad-frame { width: 95%; height: auto; }
+      .ipad-screen { padding: 40px 40px; }
+      .title { font-size: 24px; }
+      .subtitle { font-size: 15px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Tombol Logout dipindah ke luar bingkai -->
+  <button class="logout-btn" onclick="logout()">⬅ Logout</button>
+
+  <div class="ipad-frame" id="frame">
+    <div class="ipad-screen">
+      <header>
+        <h1 class="title">IMPLEMENTASI ALGORITMA KRIPTOGRAFI AES</h1>
+        <p class="subtitle">DALAM APLIKASI WEB SIMULASI KEAMANAN DATA BERBASIS FLASK</p>
+      </header>
+
+      <section class="identity mx-auto">
+        <table>
+          <tr><td>Nama</td><td>:</td><td>Ahmad Ridwan</td></tr>
+          <tr><td>NIM</td><td>:</td><td>22158700</td></tr>
+          <tr><td>Program Studi</td><td>:</td><td>Teknik Informatika</td></tr>
+          <tr><td>Dosen Pembimbing</td><td>:</td><td>ST Eko Saputro, S.T., M.Kom.</td></tr>
+        </table>
+      </section>
+
+      <div class="bottom-area">
+        <button class="btn-start" onclick="goToSimulasi()">🚀 Mulai Simulasi Enkripsi & Dekripsi ChatBot AES</button>
+        <footer>© 2025 | Simulasi Kriptografi AES - STT Duta Bangsa</footer>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.body.classList.add("fade-in");
+  });
+
+  function goToSimulasi() {
+    const frame = document.getElementById('frame');
+    frame.classList.add('fade-out');
+    document.body.style.opacity = 0;
+    setTimeout(() => {
+      window.location.href = "{{ url_for('index') }}";
+    }, 600);
+  }
+
+  function logout() {
+    if (confirm("Apakah Anda yakin ingin keluar?")) {
+      window.location.href = "{{ url_for('logout') }}";
+    }
+  }
+  </script>
+</body>
+</html>
